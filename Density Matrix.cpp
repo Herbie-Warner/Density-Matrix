@@ -23,7 +23,10 @@ double computeEntropy(const DensityMatrix& rho) {
   return entropy;
 }
 
+void print()
+{
 
+}
 
 void normalise_matrix(DensityMatrix& rho) {
   double trace = std::abs(rho.trace().real());
