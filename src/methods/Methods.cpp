@@ -40,34 +40,6 @@ namespace Methods
     return C;
   }
 
-  DensityMatrix partialTraceSecondSubsystem(const DensityMatrix& rho, int dimA, int dimB) {
-    DensityMatrix tracedRho = DensityMatrix::Zero(dimA, dimA);
-
-    for (int i = 0; i < dimA; ++i) {
-      for (int j = 0; j < dimA; ++j) {
-        for (int k = 0; k < dimB; ++k) {
-          tracedRho(i, j) += rho(i * dimB + k, j * dimB + k);
-        }
-      }
-    }
-
-    return tracedRho;
-  }
-
-  DensityMatrix partialTraceFirstSubsystem(const DensityMatrix& rho, int dimA, int dimB) {
-    DensityMatrix tracedRho = DensityMatrix::Zero(dimB, dimB);
-
-    for (int i = 0; i < dimB; ++i) {
-      for (int j = 0; j < dimB; ++j) {
-        for (int k = 0; k < dimA; ++k) {
-          tracedRho(i, j) += rho(k * dimB + i, k * dimB + j);
-        }
-      }
-    }
-
-    return tracedRho;
-  }
-
 
   bool isPure(const DensityMatrix& matrix) {
     auto square = matrix * matrix;
@@ -91,8 +63,6 @@ namespace Methods
       }
     }
 
-
-
     DensityMatrix purifiedState = psi * psi.adjoint();
     return purifiedState;
   }
@@ -100,37 +70,45 @@ namespace Methods
   ostream& operator<<(std::ostream& os, const DensityMatrix& matrix) {
     for (int i = 0; i < matrix.rows(); ++i) {
       for (int j = 0; j < matrix.cols(); ++j) {
-        os << real(matrix(i, j)) << "\t";
+        os << matrix(i, j) << "\t";
       }
       os << endl;
     }
     return os;
   }
 
-  DensityMatrix partialTrace(const DensityMatrix& rho, const vector<int>& dims, int subsystem) {
-    int dimA = 1, dimB = dims[subsystem], dimC = 1;
-    for (int i = 0; i < subsystem; ++i) dimA *= dims[i];
-    for (size_t i = subsystem + 1; i < dims.size(); ++i) dimC *= dims[i];
+  DensityMatrix partialTrace(const DensityMatrix& rho, int qubit) {
 
-    int newDim = dimA * dimC;
-    DensityMatrix tracedRho = DensityMatrix::Zero(newDim, newDim);
+    int totalQubits = std::log2(rho.rows());
+    qubit = totalQubits - qubit;
+   
 
-    for (int i = 0; i < dimA; ++i) {
-      for (int j = 0; j < dimA; ++j) {
-        for (int k = 0; k < dimC; ++k) {
-          for (int l = 0; l < dimC; ++l) {
-            for (int m = 0; m < dimB; ++m) {
-              int row = (i * dimB + m) * dimC + k;
-              int col = (j * dimB + m) * dimC + l;
-              tracedRho(i * dimC + k, j * dimC + l) += rho(row, col);
-            }
-          }
+    int dim = 1 << totalQubits;
+    int subDim = 1 << (totalQubits - 1);
+    DensityMatrix reducedDensityMatrix = DensityMatrix::Zero(subDim, subDim);
+
+    for (int i = 0; i < dim; ++i) {
+      for (int j = 0; j < dim; ++j) {
+        int i0 = (i & ((1 << qubit) - 1)) | ((i >> (qubit + 1)) << qubit);
+        int j0 = (j & ((1 << qubit) - 1)) | ((j >> (qubit + 1)) << qubit);
+        int i1 = (i >> qubit) & 1;
+        int j1 = (j >> qubit) & 1;
+
+        if (i1 == j1) {
+          reducedDensityMatrix(i0, j0) += rho(i, j);
         }
       }
     }
 
-    return tracedRho;
+    return reducedDensityMatrix;
   }
 
-
+  double ReflectedEntropy(const DensityMatrix& rho) {  // Only for rho 2 qubit
+    DensityMatrix ABC = canonicalPurification(rho);
+    DensityMatrix AC = partialTrace(ABC, 2);
+    DensityMatrix ACApCp = tensorProduct(AC, AC);
+    DensityMatrix ACAp = partialTrace(partialTrace(ACApCp,6),5);
+    DensityMatrix AAp = partialTrace(partialTrace(ACAp,2),2);
+    return computeEntropy(AAp);  
+  }
 }

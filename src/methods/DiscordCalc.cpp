@@ -1,143 +1,147 @@
-//DiscordCalc.cpp
+﻿//DiscordCalc.cpp
 
 #include "methods/DiscordCalc.h"
 
 using namespace Methods;
 using namespace Eigen;
-using std::cout, std::endl;
+using std::cout, std::endl, std::abs;
 
 namespace DiscordCalc
 {
   double mutualInformationCalc(const Methods::DensityMatrix& rhoAB, int dimA, int dimB)
   {
-    double S_A = computeEntropy(partialTraceSecondSubsystem(rhoAB, dimA, dimB));
-    double S_B = computeEntropy(partialTraceFirstSubsystem(rhoAB, dimA, dimB));
+    double S_A = computeEntropy(partialTrace(rhoAB,2));
+    double S_B = computeEntropy(partialTrace(rhoAB, 1));
     double S_AB = computeEntropy(rhoAB);
 
     return S_A + S_B - S_AB;
   }
 
-  double J_PI_AB_PauliX(const Methods::DensityMatrix& rhoAB, int dimA, int dimB)
-  {
-    
-    Operator identityMatrix = MatrixXd::Identity(dimA, dimA);
+  
 
-    Operator X_d = MatrixXd::Zero(dimB, dimB);
-    for (int i = 0; i < dimB; ++i) {
-      int j = (i + 1) % dimB;
-      X_d(i, j) = 1;
+  double J_AB_2Qubits(const Methods::DensityMatrix& rhoAB)
+  {
+
+    Eigen::Vector2cd ket0, ket1, basis0, basis1;
+    ket0 << 1, 0;
+    ket1 << 0, 1;
+
+    double theta = 0;
+    double maxTheta = 2*PI;
+    int size = 10000;
+
+    double best_entropy = 10;
+    double best_theta = 0;
+
+    for (int i = 0; i < size; ++i)
+    {
+      theta += maxTheta/size;
+      basis0 = std::cos(theta) * ket0 + std::sin(theta) * ket1;
+      basis1 = std::sin(theta) * ket0 - std::cos(theta) * ket1;
+
+      Operator A = basis0 * basis0.adjoint();
+      Operator B = basis1 * basis1.adjoint();
+      std::vector<Operator> operators;
+
+      Operator identityMatrix_A = MatrixXd::Identity(2, 2);
+      operators.push_back(tensorProduct(identityMatrix_A, A));
+      operators.push_back(tensorProduct(identityMatrix_A, B));
+
+
+      double entropy_sum = 0;
+
+
+      for (const auto& oper : operators) {
+
+        double prob = abs((oper * rhoAB).trace());
+        DensityMatrix rhoAB_post_measurement = oper * (rhoAB * oper.adjoint()) / prob;
+        entropy_sum += prob * computeEntropy(partialTrace(rhoAB_post_measurement, 2));
+      }
+      if (entropy_sum < best_entropy)
+      {
+        best_entropy = entropy_sum;
+        best_theta = theta;
+      }
     }
 
-    Operator operate = tensorProduct(identityMatrix, X_d);
-    DensityMatrix rhoAB_p = operate * rhoAB * operate.adjoint();
-
-    DensityMatrix rhoA = partialTraceSecondSubsystem(rhoAB, dimA, dimB);
-    DensityMatrix rhoA_x = partialTraceSecondSubsystem(rhoAB_p, dimA, dimB);
-    normalise_matrix(rhoA_x);
-
-    cout<<rhoAB<<endl;
-    cout<<rhoAB_p<<endl;
-
-
+    DensityMatrix rhoA = partialTrace(rhoAB,2);
     double S_A = computeEntropy(rhoA);
-    double S_A_p = computeEntropy(rhoA_x);
+    return S_A - best_entropy;
+    /*
+    std::complex<double> I(0, 1);
 
-    cout<<rhoA<<endl;
-    cout<<S_A<<endl;
+    // Define qubit basis states
+    Eigen::Vector2cd ket0, ket1, ketPlus, ketMinus, ketPlusI, ketMinusI;
 
-    cout<<S_A_p<<endl;
-    cout<<rhoA_x<<endl;
+    ket0 << 1, 0;
+    ket1 << 0, 1;
+    ketPlus << 1 / std::sqrt(2), 1 / std::sqrt(2);
+    ketMinus << 1 / std::sqrt(2), -1 / std::sqrt(2);
+    ketPlusI << 1 / std::sqrt(2), I / std::sqrt(2);
+    ketMinusI << 1 / std::sqrt(2), -I / std::sqrt(2);
 
-    return S_A - S_A_p; //For only pauliX measurement e.g
+    // Define density matrices
+    Operator A = (ket0 * ket0.adjoint());
+    Operator B = ket1 * ket1.adjoint();
+    Operator C = (ketPlus * ketPlus.adjoint());
+    Operator D = (ketMinus * ketMinus.adjoint());
+    Operator E = (ketPlusI * ketPlusI.adjoint());
+    Operator F = (ketMinusI * ketMinusI.adjoint());
 
-  }
+    std::vector<Operator> operators;
+    operators.push_back(A);
+    operators.push_back(B);
+    operators.push_back(C);
+    operators.push_back(D);
+    operators.push_back(E);
+    operators.push_back(F);
 
-  double J_PI_AB(const Methods::DensityMatrix& rhoAB, int dimA, int dimB)
-  {
     Operator identityMatrix_A = MatrixXd::Identity(dimA, dimA);
-    Operator identityMatrix_B = MatrixXd::Identity(dimB, dimB);
+    double entropy_sum = 0;
 
 
-
-
-    Operator sigmaX = MatrixXd::Zero(dimB, dimB);
-    for (int i = 0; i < dimB; ++i) {
-      int j = (i + 1) % dimB;
-      sigmaX(i, j) = 1;
+    for (const auto& oper : operators){
+      Operator full_space_oper = tensorProduct(identityMatrix_A, oper);
+      double prob = abs((full_space_oper * rhoAB).trace());
+      cout<<prob<<endl;
+      DensityMatrix rhoAB_post_measurement = full_space_oper * (rhoAB * full_space_oper.adjoint()) / prob;
+      cout<<rhoAB_post_measurement<<endl;
+      entropy_sum += prob* computeEntropy(partialTraceSecondSubsystem(rhoAB_post_measurement, dimA, dimB));
     }
-
-    Operator sigmaY = MatrixXcd::Zero(dimB, dimB);
-    for (int i = 0; i < dimB - 1; ++i) {
-      sigmaY(i, i + 1) = std::complex<double>(0, -1);
-      sigmaY(i + 1, i) = std::complex<double>(0, 1);
-    }
-
-
-    Operator sigmaZ = MatrixXcd::Zero(dimB, dimB);
-    for (int i = 0; i < dimB; ++i) {
-      sigmaZ(i, i) = std::complex<double>(1.0 - 2.0 * i / (dimB - 1), 0);
-    }
-
-    Operator operate_identity = tensorProduct(identityMatrix_A, identityMatrix_B);
-    Operator operate_sigmaX = tensorProduct(identityMatrix_A, sigmaX);
-    Operator operate_sigmaY = tensorProduct(identityMatrix_A, sigmaY);
-    Operator operate_sigmaZ = tensorProduct(identityMatrix_A, sigmaZ);
 
     
-    DensityMatrix rhoAB_p_I = operate_identity * rhoAB * operate_identity.adjoint();
-    DensityMatrix rhoAB_p_X = operate_sigmaX * rhoAB * operate_sigmaX.adjoint();
-    DensityMatrix rhoAB_p_Y = operate_sigmaY * rhoAB * operate_sigmaY.adjoint();
-    DensityMatrix rhoAB_p_Z = operate_sigmaZ * rhoAB * operate_sigmaZ.adjoint();
+ 
+    
+    Operator spin_up_B(2,2);
+    spin_up_B<<1,0,0,0;
 
 
-    normalise_matrix(rhoAB_p_I);
-    normalise_matrix(rhoAB_p_X);
-    normalise_matrix(rhoAB_p_Y);
-    normalise_matrix(rhoAB_p_Z);
+    Operator spin_down_B(2, 2);
+    spin_down_B << 0.5, 0.5, 0.5, 0.5;
 
-    cout<<rhoAB_p_X<<endl;
-    cout<<rhoAB_p_Y<<endl;
-    cout<<rhoAB_p_Z<<endl;
+    Operator spin_upB = tensorProduct(identityMatrix_A, spin_up_B);
+    Operator spin_downB = tensorProduct(identityMatrix_A, spin_down_B);
+
+    double prob_up = abs((spin_upB*rhoAB).trace());
+    double prob_down = abs((spin_downB * rhoAB).trace());
+
+    DensityMatrix rhoAB_post_up = spin_upB*(rhoAB*spin_upB.adjoint())/prob_up;
+    DensityMatrix rhoAB_post_down = spin_downB * (rhoAB * spin_downB.adjoint()) / prob_down;
+
+   
 
     DensityMatrix rhoA = partialTraceSecondSubsystem(rhoAB, dimA, dimB);
-
-
-    DensityMatrix rhoA_I = partialTraceSecondSubsystem(rhoAB_p_I, dimA, dimB);
-    DensityMatrix rhoA_X = partialTraceSecondSubsystem(rhoAB_p_X, dimA, dimB);
-    DensityMatrix rhoA_Y = partialTraceSecondSubsystem(rhoAB_p_Y, dimA, dimB);
-    DensityMatrix rhoA_Z = partialTraceSecondSubsystem(rhoAB_p_Z, dimA, dimB);
-
-    cout<<"---"<<endl;
-    cout<<partialTraceFirstSubsystem(rhoAB_p_I,dimA,dimB)<<endl;
-
-    cout << partialTraceFirstSubsystem(rhoAB_p_X, dimA, dimB) << endl;
-
-    cout << partialTraceFirstSubsystem(rhoAB_p_Y, dimA, dimB) << endl;
-
-    cout << partialTraceFirstSubsystem(rhoAB_p_Z, dimA, dimB) << endl;
-
-    cout<<"---"<<endl;
-
-
-    double SA_I = computeEntropy(rhoA_I);
-    double SA_X = computeEntropy(rhoA_X);
-    double SA_Y = computeEntropy(rhoA_Y);
-    double SA_Z = computeEntropy(rhoA_Z);
-
-
-    cout<<"000000"<<"\n"<<endl;
-    cout<<SA_I<<endl;
-    cout<<rhoA_I<<endl;
-    cout<<SA_X<<endl;
-    cout<<rhoA_X<<endl;
-    cout<<SA_Y<<endl;
-    cout<<rhoA_Y<<endl;
-    cout<<SA_Z<<endl;
-    cout<<rhoA_Z<<endl;
-
-    double sum = 0.25 * SA_I + 0.25 * SA_X + 0.25 * SA_Y + 0.25 * SA_Z;
     double S_A = computeEntropy(rhoA);
 
-    return S_A - sum;
+
+    double sum = prob_up*computeEntropy(partialTraceSecondSubsystem(rhoAB_post_up, dimA, dimB)) + prob_down * computeEntropy(partialTraceSecondSubsystem(rhoAB_post_down, dimA, dimB));
+    
+
+    DensityMatrix rhoA = partialTraceSecondSubsystem(rhoAB, dimA, dimB);
+    double S_A = computeEntropy(rhoA);
+
+    return S_A - entropy_sum;
+    */
+    
   }
 }

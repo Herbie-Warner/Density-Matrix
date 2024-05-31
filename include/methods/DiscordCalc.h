@@ -6,9 +6,9 @@
 #define DISCORDCALC_H
 
 namespace DiscordCalc {
+  const double PI = 3.14159265358979323846;
   double mutualInformationCalc(const Methods::DensityMatrix& rhoAB, int dimA, int dimB);
-  double J_PI_AB_PauliX(const Methods::DensityMatrix& rhoAB, int dimA, int dimB);
-  double J_PI_AB(const Methods::DensityMatrix& rhoAB, int dimA, int dimB);
+  double J_AB_2Qubits(const Methods::DensityMatrix& rhoAB);
 }
 
 #endif
