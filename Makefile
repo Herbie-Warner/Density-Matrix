@@ -10,7 +10,7 @@ MAIN_SRC := $(wildcard $(SRCDIR)/main/*.cpp)
 SRCS := $(METHODS_SRCS) $(MAIN_SRC)
 OBJS := $(SRCS:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 OBJS := $(OBJS:/=\)
-TARGET := $(BINDIR)/optimisation.exe
+TARGET := optimisation.exe
 
 all: build $(TARGET)
 

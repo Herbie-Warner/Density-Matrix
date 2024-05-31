@@ -1,7 +1,9 @@
 #include "methods/Methods.h"
+#include "methods/DiscordCalc.h"
 
 using namespace Methods;
 using namespace std;
+using namespace DiscordCalc;
 
 int main() {
 
@@ -74,13 +76,17 @@ int main() {
   */
 
   DensityMatrix rhoAB(4, 4);
-  rhoAB << 5, 2, 0.0, 3,
-    2, 5, 0.0, 0.0,
-    0.0, 0.0, 5, 0,
-    3, 0.0, 0, 5;
+  rhoAB << 5, 2, 1, 3,
+           2, 2, 1, 0,
+           1, 1, 4, 2,
+           3, 0, 2, 8;
+
+  
+
   normalise_matrix(rhoAB);
+  cout<<rhoAB<<endl;
 
-
+  /*
   DensityMatrix rhoABC = canonicalPurification(rhoAB);
 
   DensityMatrix rhoBC = partialTraceFirstSubsystem(rhoABC, 4, 4);
@@ -97,6 +103,17 @@ int main() {
 
   cout << "rhoAB after tracing out C from rhoABC:" << endl;
   cout << rhoAB_retraced << endl;
+  */
+
+  double mut_info = mutualInformationCalc(rhoAB, 2, 2);
+
+
+
+
+  double res = J_PI_AB(rhoAB, 2, 2);
+  cout<<mut_info<<endl;
+  cout<<res<<endl;
+  cout<<mut_info- res<<endl;
 
   return 0;
 }

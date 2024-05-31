@@ -10,6 +10,7 @@
 
 namespace Methods {
   typedef Eigen::MatrixXcd DensityMatrix;
+  typedef Eigen::MatrixXcd Operator;
 
 
   double computeEntropy(const DensityMatrix& rho);

@@ -40,7 +40,7 @@ namespace Methods
     return C;
   }
 
-  DensityMatrix partialTraceFirstSubsystem(const DensityMatrix& rho, int dimA, int dimB) {
+  DensityMatrix partialTraceSecondSubsystem(const DensityMatrix& rho, int dimA, int dimB) {
     DensityMatrix tracedRho = DensityMatrix::Zero(dimA, dimA);
 
     for (int i = 0; i < dimA; ++i) {
@@ -54,7 +54,7 @@ namespace Methods
     return tracedRho;
   }
 
-  DensityMatrix partialTraceSecondSubsystem(const DensityMatrix& rho, int dimA, int dimB) {
+  DensityMatrix partialTraceFirstSubsystem(const DensityMatrix& rho, int dimA, int dimB) {
     DensityMatrix tracedRho = DensityMatrix::Zero(dimB, dimB);
 
     for (int i = 0; i < dimB; ++i) {
