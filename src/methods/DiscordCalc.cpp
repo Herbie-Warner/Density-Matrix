@@ -8,7 +8,7 @@ using std::cout, std::endl, std::abs;
 
 namespace DiscordCalc
 {
-  double mutualInformationCalc(const Methods::DensityMatrix& rhoAB, int dimA, int dimB)
+  double mutualInformationCalc(const Methods::DensityMatrix& rhoAB)
   {
     double S_A = computeEntropy(partialTrace(rhoAB,2));
     double S_B = computeEntropy(partialTrace(rhoAB, 1));
@@ -156,5 +156,39 @@ namespace DiscordCalc
     return S_A - entropy_sum;
     */
     
+  }
+
+  double compute_DW(const DensityMatrix& rhoAB)
+  {
+    DensityMatrix rhoB = partialTrace(rhoAB, 1);
+    double dW = computeEntropy(rhoB) - computeEntropy(rhoAB) + ReflectedEntropy(rhoAB) / 2;
+    return dW;
+  }
+
+  double compute_D(const DensityMatrix& rhoAB)
+  {
+    double res = J_AB_2Qubits(rhoAB);
+    double mut_info = mutualInformationCalc(rhoAB);
+    double D = mut_info - res;
+    return D;
+  }
+
+  double compute_DT(const DensityMatrix& rhoAB)
+  {
+    DensityMatrix rhoCAB = canonicalPurification(rhoAB);
+    DensityMatrix rhoCB = partialTrace(rhoCAB, 3);
+    DensityMatrix rhoCpBpCB = canonicalPurification(rhoCB);
+    DensityMatrix rhoCpBpB = partialTrace(partialTrace(rhoCpBpCB, 5), 4);
+    DensityMatrix BpB = partialTrace(partialTrace(rhoCpBpB, 1), 1);
+    double S_BBp = computeEntropy(BpB);
+    double mut_info = mutualInformationCalc(rhoAB);
+    return mut_info - S_BBp;
+  }
+
+  double compute_MarkovGap(const Methods::DensityMatrix& rhoAB)
+  {
+    double mut = mutualInformationCalc(rhoAB);
+    double reflected_entropy = ReflectedEntropy(rhoAB);
+    return reflected_entropy - mut;
   }
 }

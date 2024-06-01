@@ -1,3 +1,14 @@
+/*
+
+3.4 - done
+3.5 - done
+
+
+*/
+
+
+
+
 #include "methods/Methods.h"
 #include "methods/DiscordCalc.h"
 
@@ -42,7 +53,7 @@ void prove_D_less_than_DW()
 
   double res = J_AB_2Qubits(rhoAB);
 
-  double mut_info = mutualInformationCalc(rhoAB, 2, 2);
+  double mut_info = mutualInformationCalc(rhoAB);
   double D = mut_info - res;
 
   DensityMatrix rhoB = partialTrace(rhoAB, 1);
@@ -59,40 +70,29 @@ void prove_D_less_than_DW()
  // cout << "Pure: " << std::boolalpha << isPure(rho) << std::endl;
 }
 
-double compute_DW(const DensityMatrix& rhoAB)
+void verify_3_5()
 {
-  DensityMatrix rhoB = partialTrace(rhoAB, 1);
-  double dW = computeEntropy(rhoB) - computeEntropy(rhoAB) + ReflectedEntropy(rhoAB) / 2;
-  return dW;
-}
-
-double compute_D(const DensityMatrix& rhoAB)
-{
-  double res = J_AB_2Qubits(rhoAB);
-  double mut_info = mutualInformationCalc(rhoAB, 2, 2);
-  double D = mut_info - res;
-  return D;
-}
-
-double compute_DT(const DensityMatrix& rhoAB)
-{
-  DensityMatrix rhoCAB = canonicalPurification(rhoAB);
-  DensityMatrix rhoCB = partialTrace(rhoCAB,3);
-  DensityMatrix rhoCpBpCB = canonicalPurification(rhoCB);
-  DensityMatrix rhoCpBpB = partialTrace(partialTrace(rhoCpBpCB, 5), 4); 
-  DensityMatrix BpB = partialTrace(partialTrace(rhoCpBpB, 1), 1);
-  double S_BBp = computeEntropy(BpB);
-  double mut_info = mutualInformationCalc(rhoAB, 2, 2);
-  return mut_info - S_BBp;
-}
-
-int main() {
   DensityMatrix rhoAB(4, 4);
 
   rhoAB << 1, 0, 0, 0,
     0, 2, 0.1, 0,
     0, 0.1, 1, 0.5,
     0, 0, 0.5, 1;
+
+  DensityMatrix rhoA(2, 2);
+  rhoA << 1, 0, 0, 1;
+
+  DensityMatrix rhoB(2, 2);
+  rhoB << 1, 0, 0, 1;
+
+
+  normalise_matrix(rhoA);
+  normalise_matrix(rhoB);
+
+
+
+
+  rhoAB = tensorProduct(rhoA, rhoB);
 
   normalise_matrix(rhoAB);
   validateDensityMatrix(rhoAB);
@@ -104,7 +104,54 @@ int main() {
   std::cout << "Discord: " << D << endl;
   std::cout << "DW: " << DW << endl;
   std::cout << "DT: " << DT << endl;
+}
 
+void verify_7_2()
+{
+  DensityMatrix rhoAB(4, 4);
+
+  rhoAB << 1, 0, 0, 0,
+    0, 2, 0.1, 0,
+    0, 0.1, 1, 0.5,
+    0, 0, 0.5, 1;
+
+  validateDensityMatrix(rhoAB);
+
+  double D = compute_D(rhoAB);
+
+
+  double DW = compute_DW(rhoAB);
+  double Q = DW - mutualInformationCalc(rhoAB)/2 ;
+
+  std::cout << "Discord: " << D << endl;
+  std::cout << "DW: " << DW << endl;
+  std::cout << "DeltaQ: " << Q << endl;
+}
+
+void verify_7_3()
+{
+  DensityMatrix rhoAB(4, 4);
+
+  rhoAB << 1, 0, 0, 0,
+    0, 2, 0.1, 0,
+    0, 0.1, 1, 0.5,
+    0, 0, 0.5, 1;
+
+  validateDensityMatrix(rhoAB);
+
+  double D = compute_D(rhoAB);
+
+
+  double DW = compute_DW(rhoAB);
+  double Q = DW - mutualInformationCalc(rhoAB) / 2;
+
+  std::cout << "Discord: " << D << endl;
+  std::cout << "HAC/2: " << Q << endl;
+  std::cout << "HAC: " << 2*Q << endl;
+}
+
+int main() {
+  verify_7_3();
   return 0;
 
 }
