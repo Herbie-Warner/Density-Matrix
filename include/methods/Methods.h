@@ -21,6 +21,7 @@ namespace Methods {
   DensityMatrix canonicalPurification(const DensityMatrix& rho);
   DensityMatrix partialTrace(const DensityMatrix& rho, int qubit);
   double ReflectedEntropy(const DensityMatrix& rho);
+  bool validateDensityMatrix(DensityMatrix& rho);
 }
 
 #endif
