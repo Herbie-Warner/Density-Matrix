@@ -2,6 +2,7 @@
 //Herbie Warner 30/05/2024
 
 #include"methods/Methods.h"
+#include<stdexcept>
 
 using namespace Eigen;
 using namespace std;
@@ -105,12 +106,32 @@ namespace Methods
 
   double ReflectedEntropy(const DensityMatrix& rho) {  // Only for rho 2 qubit
 
-    DensityMatrix CAB = canonicalPurification(rho);
-    DensityMatrix CA = partialTrace(CAB,4);
-    DensityMatrix CpApCA = canonicalPurification(CA);
-    DensityMatrix ApA = partialTrace(partialTrace(partialTrace(partialTrace(CpApCA, 1), 1), 2), 2);
-    cout << "Pure: " << std::boolalpha << isPure(ApA) << endl;
+    DensityMatrix CAB = canonicalPurification(rho); //correct
+    DensityMatrix CA = partialTrace(CAB,4); //Correct
+    DensityMatrix CpApCA = canonicalPurification(CA); //Correct
+    DensityMatrix CpApA = partialTrace(partialTrace(CpApCA,5),4); //Correct
+    DensityMatrix ApA = partialTrace(partialTrace(CpApA,1),1); //Correct
     double S_AAp = computeEntropy(ApA);
     return S_AAp;
+  }
+
+  bool validateDensityMatrix(DensityMatrix& rho)
+  {
+    normalise_matrix(rho);
+    SelfAdjointEigenSolver<MatrixXcd> es(rho);
+    VectorXd eigenvalues = es.eigenvalues().real();
+    for (const auto& eigenvalue : eigenvalues)
+    {
+      if (eigenvalue <= 0)
+      {
+        throw std::invalid_argument("-VE eigenvalues");
+        return false;
+      }
+    }
+    if(rho.determinant().real() <= 0) { throw std::invalid_argument("-VE det"); }
+
+    if(rho.adjoint() != rho) {throw std::invalid_argument("non hermitian"); }
+    return true;
+
   }
 }
