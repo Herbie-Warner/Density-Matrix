@@ -232,6 +232,8 @@ int main() {
   std::cout<<"Discord: "<<D<<endl;
   std::cout<<"DW: "<<dW<<endl;
 
+  std::cout<<"first co,,it"<<endl;
+
   return 0;
 
 }
