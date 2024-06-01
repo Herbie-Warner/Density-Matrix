@@ -25,43 +25,56 @@ namespace DiscordCalc
     Eigen::Vector2cd ket0, ket1, basis0, basis1;
     ket0 << 1, 0;
     ket1 << 0, 1;
+    const std::complex<double> I(0, 1);
+
 
     double theta = 0;
+    double phi = 0;
     double maxTheta = 2*PI;
-    int size = 10000;
+    double maxPhi = 2 * PI;
+    int size = 100;
 
     double best_entropy = 10;
     double best_theta = 0;
+    double best_phi = 0;
+
 
     for (int i = 0; i < size; ++i)
     {
-      theta += maxTheta/size;
-      basis0 = std::cos(theta) * ket0 + std::sin(theta) * ket1;
-      basis1 = std::sin(theta) * ket0 - std::cos(theta) * ket1;
-
-      Operator A = basis0 * basis0.adjoint();
-      Operator B = basis1 * basis1.adjoint();
-      std::vector<Operator> operators;
-
-      Operator identityMatrix_A = MatrixXd::Identity(2, 2);
-      operators.push_back(tensorProduct(identityMatrix_A, A));
-      operators.push_back(tensorProduct(identityMatrix_A, B));
-
-
-      double entropy_sum = 0;
-
-
-      for (const auto& oper : operators) {
-
-        double prob = abs((oper * rhoAB).trace());
-        DensityMatrix rhoAB_post_measurement = oper * (rhoAB * oper.adjoint()) / prob;
-        entropy_sum += prob * computeEntropy(partialTrace(rhoAB_post_measurement, 2));
-      }
-      if (entropy_sum < best_entropy)
+     
+      for (int j = 0; j < size; ++j)
       {
-        best_entropy = entropy_sum;
-        best_theta = theta;
+
+        basis0 = (std::cos(phi) + I * std::sin(phi)) * std::cos(theta) * ket0 + std::sin(theta) * ket1;
+        basis1 = (std::cos(phi) - I * std::sin(phi)) * std::sin(theta) * ket0 - std::cos(theta) * ket1;
+
+        Operator A = basis0 * basis0.adjoint();
+        Operator B = basis1 * basis1.adjoint();
+        std::vector<Operator> operators;
+
+        Operator identityMatrix_A = MatrixXd::Identity(2, 2);
+        operators.push_back(tensorProduct(identityMatrix_A, A));
+        operators.push_back(tensorProduct(identityMatrix_A, B));
+
+
+        double entropy_sum = 0;
+
+
+        for (const auto& oper : operators) {
+
+          double prob = abs((oper * rhoAB).trace());
+          DensityMatrix rhoAB_post_measurement = oper * (rhoAB * oper.adjoint()) / prob;
+          entropy_sum += prob * computeEntropy(partialTrace(rhoAB_post_measurement, 2));
+        }
+        if (entropy_sum < best_entropy)
+        {
+          best_entropy = entropy_sum;
+          best_theta = theta;
+          best_phi = phi;
+        }
+        phi += maxPhi/size;
       }
+      theta += maxTheta / size;
     }
 
     DensityMatrix rhoA = partialTrace(rhoAB,2);

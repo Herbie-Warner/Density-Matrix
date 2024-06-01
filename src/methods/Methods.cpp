@@ -47,7 +47,7 @@ namespace Methods
   }
 
   DensityMatrix canonicalPurification(const DensityMatrix& rho) {
-    if (rho.determinant().real() < 0) { throw std::invalid_argument("-ve det cannot purify"); }
+    //if (rho.determinant().real() < 1e-3) { throw std::invalid_argument("-ve det cannot purify"); }
 
     SelfAdjointEigenSolver<MatrixXcd> es(rho);
     VectorXd eigenvalues = es.eigenvalues().real();
@@ -104,11 +104,38 @@ namespace Methods
   }
 
   double ReflectedEntropy(const DensityMatrix& rho) {  // Only for rho 2 qubit
+
+    /*
     DensityMatrix ABC = canonicalPurification(rho);
+
+    cout << "Pure: " << std::boolalpha << isPure(ABC) << endl;
     DensityMatrix AC = partialTrace(ABC, 2);
-    DensityMatrix ACApCp = tensorProduct(AC, AC);
+
+    cout<<partialTrace(partialTrace(AC,2),2)<<endl;
+
+    SelfAdjointEigenSolver<MatrixXcd> es(AC);
+    VectorXd eigenvalues = es.eigenvalues().real();
+    for (const auto& ev : eigenvalues)
+    {
+      cout << ev << endl;
+    }
+
+    DensityMatrix ACApCp = canonicalPurification(AC);
     DensityMatrix ACAp = partialTrace(partialTrace(ACApCp,6),5);
     DensityMatrix AAp = partialTrace(partialTrace(ACAp,2),2);
+    cout<<AAp<<endl;
     return computeEntropy(AAp);  
+    */
+    DensityMatrix ABC = canonicalPurification(rho);
+    DensityMatrix AC = partialTrace(ABC, 2);
+    DensityMatrix ACApCp = canonicalPurification(AC);
+    DensityMatrix AApCp = partialTrace(partialTrace(ACApCp, 2), 2);
+    DensityMatrix AAp = partialTrace(partialTrace(AApCp, 3), 3);
+    double S_AAp = computeEntropy(AAp);
+    cout << AAp << endl;
+
+    return computeEntropy(AAp);
+
+
   }
 }

@@ -188,11 +188,10 @@ int main() {
   */
   DensityMatrix rhoAB(4, 4);
   rhoAB << 5, 2, 1, 3,
-           2, 10, 1, 0,
+           2, 6, 1, 0,
            1, 1, 4, 2,
            3, 0, 2, 8;
   normalise_matrix(rhoAB);
-
 
   double res = J_AB_2Qubits(rhoAB);
 
