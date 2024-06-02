@@ -1,14 +1,14 @@
-﻿//DiscordCalc.cpp
+﻿//EntropicQuantities.cpp
+#include "methods/EntropicQuantities.h"
 
-#include "methods/DiscordCalc.h"
+//using namespace Utilities;
+//using namespace Eigen;
+//using std::cout, std::endl, std::abs;
 
-using namespace Methods;
-using namespace Eigen;
-using std::cout, std::endl, std::abs;
-
-namespace DiscordCalc
+namespace EntropicQuantities
 {
-  double mutualInformationCalc(const Methods::DensityMatrix& rhoAB)
+  /*
+  double mutualInformationCalc(const Utilities::Matrix& rhoAB)
   {
     double S_A = computeEntropy(partialTrace(rhoAB,2));
     double S_B = computeEntropy(partialTrace(rhoAB, 1));
@@ -19,7 +19,7 @@ namespace DiscordCalc
 
   
 
-  double J_AB_2Qubits(const Methods::DensityMatrix& rhoAB)
+  double J_AB_2Qubits(const Utilities::Matrix& rhoAB)
   {
 
     Eigen::Vector2cd ket0, ket1, basis0, basis1;
@@ -63,7 +63,7 @@ namespace DiscordCalc
         for (const auto& oper : operators) {
 
           double prob = abs((oper * rhoAB).trace());
-          DensityMatrix rhoAB_post_measurement = oper * (rhoAB * oper.adjoint()) / prob;
+          Matrix rhoAB_post_measurement = oper * (rhoAB * oper.adjoint()) / prob;
           entropy_sum += prob * computeEntropy(partialTrace(rhoAB_post_measurement, 2));
         }
         if (entropy_sum < best_entropy)
@@ -77,7 +77,7 @@ namespace DiscordCalc
       theta += maxTheta / size;
     }
 
-    DensityMatrix rhoA = partialTrace(rhoAB,2);
+    Matrix rhoA = partialTrace(rhoAB,2);
     double S_A = computeEntropy(rhoA);
     return S_A - best_entropy;
     /*
@@ -117,7 +117,7 @@ namespace DiscordCalc
       Operator full_space_oper = tensorProduct(identityMatrix_A, oper);
       double prob = abs((full_space_oper * rhoAB).trace());
       cout<<prob<<endl;
-      DensityMatrix rhoAB_post_measurement = full_space_oper * (rhoAB * full_space_oper.adjoint()) / prob;
+      Matrix rhoAB_post_measurement = full_space_oper * (rhoAB * full_space_oper.adjoint()) / prob;
       cout<<rhoAB_post_measurement<<endl;
       entropy_sum += prob* computeEntropy(partialTraceSecondSubsystem(rhoAB_post_measurement, dimA, dimB));
     }
@@ -138,34 +138,34 @@ namespace DiscordCalc
     double prob_up = abs((spin_upB*rhoAB).trace());
     double prob_down = abs((spin_downB * rhoAB).trace());
 
-    DensityMatrix rhoAB_post_up = spin_upB*(rhoAB*spin_upB.adjoint())/prob_up;
-    DensityMatrix rhoAB_post_down = spin_downB * (rhoAB * spin_downB.adjoint()) / prob_down;
+    Matrix rhoAB_post_up = spin_upB*(rhoAB*spin_upB.adjoint())/prob_up;
+    Matrix rhoAB_post_down = spin_downB * (rhoAB * spin_downB.adjoint()) / prob_down;
 
    
 
-    DensityMatrix rhoA = partialTraceSecondSubsystem(rhoAB, dimA, dimB);
+    Matrix rhoA = partialTraceSecondSubsystem(rhoAB, dimA, dimB);
     double S_A = computeEntropy(rhoA);
 
 
     double sum = prob_up*computeEntropy(partialTraceSecondSubsystem(rhoAB_post_up, dimA, dimB)) + prob_down * computeEntropy(partialTraceSecondSubsystem(rhoAB_post_down, dimA, dimB));
     
 
-    DensityMatrix rhoA = partialTraceSecondSubsystem(rhoAB, dimA, dimB);
+    Matrix rhoA = partialTraceSecondSubsystem(rhoAB, dimA, dimB);
     double S_A = computeEntropy(rhoA);
 
     return S_A - entropy_sum;
-    */
+    
     
   }
 
-  double compute_DW(const DensityMatrix& rhoAB)
+  double compute_DW(const Matrix& rhoAB)
   {
-    DensityMatrix rhoB = partialTrace(rhoAB, 1);
+    Matrix rhoB = partialTrace(rhoAB, 1);
     double dW = computeEntropy(rhoB) - computeEntropy(rhoAB) + ReflectedEntropy(rhoAB) / 2;
     return dW;
   }
 
-  double compute_D(const DensityMatrix& rhoAB)
+  double compute_D(const Matrix& rhoAB)
   {
     double res = J_AB_2Qubits(rhoAB);
     double mut_info = mutualInformationCalc(rhoAB);
@@ -173,22 +173,39 @@ namespace DiscordCalc
     return D;
   }
 
-  double compute_DT(const DensityMatrix& rhoAB)
+  double compute_DT(const Matrix& rhoAB)
   {
-    DensityMatrix rhoCAB = canonicalPurification(rhoAB);
-    DensityMatrix rhoCB = partialTrace(rhoCAB, 3);
-    DensityMatrix rhoCpBpCB = canonicalPurification(rhoCB);
-    DensityMatrix rhoCpBpB = partialTrace(partialTrace(rhoCpBpCB, 5), 4);
-    DensityMatrix BpB = partialTrace(partialTrace(rhoCpBpB, 1), 1);
+    Matrix rhoCAB = canonicalPurification(rhoAB);
+    Matrix rhoCB = partialTrace(rhoCAB, 3);
+    Matrix rhoCpBpCB = canonicalPurification(rhoCB);
+    Matrix rhoCpBpB = partialTrace(partialTrace(rhoCpBpCB, 5), 4);
+    Matrix BpB = partialTrace(partialTrace(rhoCpBpB, 1), 1);
     double S_BBp = computeEntropy(BpB);
     double mut_info = mutualInformationCalc(rhoAB);
     return mut_info - S_BBp;
   }
 
-  double compute_MarkovGap(const Methods::DensityMatrix& rhoAB)
+  double compute_MarkovGap(const Utilities::Matrix& rhoAB)
   {
     double mut = mutualInformationCalc(rhoAB);
     double reflected_entropy = ReflectedEntropy(rhoAB);
     return reflected_entropy - mut;
+  }
+  */
+  double ReflectedEntropy(const DensityMatrix& rho, std::vector<std::string> systemA, std::vector<std::string> systemB) { //Error checks!
+    DensityMatrix ABC = rho.purify(); //Not actually ABC just notational convenience
+    DensityMatrix AC = ABC.partialTrace(systemB);
+    AC.printSubSystems();
+    std::cout<<"----"<<std::endl;
+    DensityMatrix A_C_Ap_Cp = AC.purify();
+    A_C_Ap_Cp.printSubSystems();
+    std::cout << "----" << std::endl;
+
+    std::vector<std::string> systemAp = Utilities::getPurificationString(systemA);
+    systemA.reserve(systemA.size() + systemAp.size());
+    systemA.insert(systemA.end(), systemAp.begin(), systemAp.end());
+    DensityMatrix A_Ap = A_C_Ap_Cp.getSubsystem(systemA);
+    A_Ap.printSubSystems();
+    return A_Ap.computeEntropy();
   }
 }

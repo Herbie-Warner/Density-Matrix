@@ -1,15 +1,15 @@
 //g++ -I "C:\Users\herbi\eigen-3.4.0" -o den '.\Density Matrix.cpp'
 //Herbie Warner 30/05/2024
 
-#include"methods/Methods.h"
+#include"methods/Utilities.h"
 #include<stdexcept>
 
 using namespace Eigen;
 using namespace std;
 
-namespace Methods
+namespace Utilities
 {
-  double computeEntropy(const DensityMatrix& rho) {
+  double computeEntropy(const Matrix& rho) {
     SelfAdjointEigenSolver<MatrixXcd> es(rho);
     VectorXd eigenvalues = es.eigenvalues().real();
     double entropy = 0.0;
@@ -22,8 +22,7 @@ namespace Methods
     return entropy;
   }
 
-
-  void normalise_matrix(DensityMatrix& rho) {
+  void normalise_matrix(Matrix& rho) {
     double trace = std::abs(rho.trace().real());
     if (trace != 1.0) {
       rho /= trace;
@@ -31,8 +30,8 @@ namespace Methods
   }
 
 
-  DensityMatrix tensorProduct(const DensityMatrix& A, const DensityMatrix& B) {
-    DensityMatrix C(A.rows() * B.rows(), A.cols() * B.cols());
+  Matrix tensorProduct(const Matrix& A, const Matrix& B) {
+    Matrix C(A.rows() * B.rows(), A.cols() * B.cols());
     for (int i = 0; i < A.rows(); ++i) {
       for (int j = 0; j < A.cols(); ++j) {
         C.block(i * B.rows(), j * B.cols(), B.rows(), B.cols()) = A(i, j) * B;
@@ -42,33 +41,12 @@ namespace Methods
   }
 
 
-  bool isPure(const DensityMatrix& matrix) {
+  bool isPure(const Matrix& matrix) {
     auto square = matrix * matrix;
     return std::abs(square.trace().real() - 1.0) < 1e-10;
   }
 
-  DensityMatrix canonicalPurification(const DensityMatrix& rho) {
-    //if (rho.determinant().real() < 1e-3) { throw std::invalid_argument("-ve det cannot purify"); }
-
-    SelfAdjointEigenSolver<MatrixXcd> es(rho);
-    VectorXd eigenvalues = es.eigenvalues().real();
-    MatrixXcd eigenvectors = es.eigenvectors();
-    int dim = static_cast<int>(eigenvalues.size());
-
-    DensityMatrix psi = DensityMatrix::Zero(dim * dim, 1);
-    for (int i = 0; i < dim; ++i) {
-      if (eigenvalues(i) > 0) {
-        for (int j = 0; j < dim; ++j) {
-          psi(i * dim + j, 0) = sqrt(eigenvalues(i)) * eigenvectors(j, i);
-        }
-      }
-    }
-
-    DensityMatrix purifiedState = psi * psi.adjoint();
-    return purifiedState;
-  }
-
-  ostream& operator<<(std::ostream& os, const DensityMatrix& matrix) {
+  ostream& operator<<(std::ostream& os, const Matrix& matrix) {
     for (int i = 0; i < matrix.rows(); ++i) {
       for (int j = 0; j < matrix.cols(); ++j) {
         os << matrix(i, j) << "\t";
@@ -78,7 +56,7 @@ namespace Methods
     return os;
   }
 
-  DensityMatrix partialTrace(const DensityMatrix& rho, int qubit) {
+  Matrix partialTrace(const Matrix& rho, int qubit) {
 
     int totalQubits = std::log2(rho.rows());
     qubit = totalQubits - qubit;
@@ -86,7 +64,7 @@ namespace Methods
 
     int dim = 1 << totalQubits;
     int subDim = 1 << (totalQubits - 1);
-    DensityMatrix reducedDensityMatrix = DensityMatrix::Zero(subDim, subDim);
+    Matrix reducedDensityMatrix = Matrix::Zero(subDim, subDim);
 
     for (int i = 0; i < dim; ++i) {
       for (int j = 0; j < dim; ++j) {
@@ -104,34 +82,32 @@ namespace Methods
     return reducedDensityMatrix;
   }
 
-  double ReflectedEntropy(const DensityMatrix& rho) {  // Only for rho 2 qubit
-
-    DensityMatrix CAB = canonicalPurification(rho); //correct
-    DensityMatrix CA = partialTrace(CAB,4); //Correct
-    DensityMatrix CpApCA = canonicalPurification(CA); //Correct
-    DensityMatrix CpApA = partialTrace(partialTrace(CpApCA,5),4); //Correct
-    DensityMatrix ApA = partialTrace(partialTrace(CpApA,1),1); //Correct
-    double S_AAp = computeEntropy(ApA);
-    return S_AAp;
-  }
-
-  bool validateDensityMatrix(DensityMatrix& rho)
+  bool validateDensityMatrix(Matrix& rho)
   {
+    constexpr double tolerance = - 0.0000001;
     normalise_matrix(rho);
     SelfAdjointEigenSolver<MatrixXcd> es(rho);
     VectorXd eigenvalues = es.eigenvalues().real();
     for (const auto& eigenvalue : eigenvalues)
     {
-      if (eigenvalue <= 0)
+      if (eigenvalue <= tolerance)
       {
         throw std::invalid_argument("-VE eigenvalues");
         return false;
       }
     }
-    if(rho.determinant().real() <= 0) { throw std::invalid_argument("-VE det"); }
+    if(rho.determinant().real() <= tolerance) { throw std::invalid_argument("-VE det"); }
 
     if(rho.adjoint() != rho) {throw std::invalid_argument("non hermitian"); }
     return true;
+  }
 
+  std::vector<std::string> getPurificationString(const std::vector<std::string>& original)
+  {
+    std::vector<std::string> purified;
+    for (const auto& string : original) {
+      purified.push_back(string + "'");
+    }
+    return purified;
   }
 }
